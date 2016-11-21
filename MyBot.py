@@ -53,6 +53,8 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                 else:
                     localX = 0;
                     break
+                if localX > 10:
+                    break;
         if d == WEST:
             while localX <= gameMap.width:
                 neighbour_site = gameMap.getSite(Location((x-localX) % gameMap.width, y),d)
@@ -62,6 +64,8 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                 else:
                     localX = 0
                     break
+                if localX > 10:
+                    break;
         if d == NORTH:
             while localY <= gameMap.height:
                 neighbour_site = gameMap.getSite(Location(x, (y - localY) % gameMap.height),d)
@@ -71,6 +75,8 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                 else:
                     localY = 0
                     break
+                if localY > 10:
+                    break;
         if d == SOUTH:
             while localY <= gameMap.height:
                 neighbour_site = gameMap.getSite(Location(x, (y+localY) % gameMap.height),d)
@@ -80,6 +86,8 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                 else:
                     localY=0
                     break
+                if localY > 10:
+                    break;
 
     return directionCounts.index(min(directionCounts)) + 1
 
