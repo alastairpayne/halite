@@ -2,7 +2,7 @@ from hlt import *
 from networking import *
 
 myID, gameMap = getInit()
-PRODUCTION_FACTOR = 5
+PRODUCTION_FACTOR = 3
 sendInit("MyPythonBotXXX")
 
 def move(location, x, y, gameMap):
@@ -17,7 +17,9 @@ def move(location, x, y, gameMap):
     #this bit is shit
     if allFriendly(location):
         #return Move(location, randomNW())
-        return Move(location, directionOfNearestUnfriendlySquare(x,y,gameMap))
+        if site.strength > site.production * PRODUCTION_FACTOR:
+            return Move(location, directionOfNearestUnfriendlySquare(x,y,gameMap))
+
 
     return Move(location,STILL)
 
@@ -32,18 +34,6 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
     localX = 0
     localY = 0
     for d in CARDINALS:
-        # if d == EAST:
-        #     while localX <= gameMap.width:
-        #         neighbour_site = gameMap.getSite(Location((x+localX) % gameMap.width, y),d)
-        #         localX +=1
-        #         break
-        # if d == WEST:
-        #     c=1
-        # if d == NORTH:
-        #     c=1
-        # if d == SOUTH:
-        #     c=1
-        #
         if d == EAST:
             while localX <= gameMap.width:
                 neighbour_site = gameMap.getSite(Location((x+localX) % gameMap.width, y),d)
@@ -53,7 +43,7 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                 else:
                     localX = 0;
                     break
-                if localX > 10:
+                if localX > 3:
                     break;
         if d == WEST:
             while localX <= gameMap.width:
@@ -64,7 +54,7 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                 else:
                     localX = 0
                     break
-                if localX > 10:
+                if localX > 3:
                     break;
         if d == NORTH:
             while localY <= gameMap.height:
@@ -75,7 +65,7 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                 else:
                     localY = 0
                     break
-                if localY > 10:
+                if localY > 3:
                     break;
         if d == SOUTH:
             while localY <= gameMap.height:
@@ -86,7 +76,7 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                 else:
                     localY=0
                     break
-                if localY > 10:
+                if localY > 3:
                     break;
 
     return directionCounts.index(min(directionCounts)) + 1
