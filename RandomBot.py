@@ -2,7 +2,7 @@ from hlt import *
 from networking import *
 
 myID, gameMap = getInit()
-sendInit("Alastairv2")
+sendInit("Alastairv7")
 
 def move(location):
     site = gameMap.getSite(location)

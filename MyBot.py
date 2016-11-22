@@ -6,7 +6,8 @@ START_POS = [0,0]
 INIT = False
 PRODUCTION_FACTOR = 3
 GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR = 3
-sendInit("MyPythonBotXXX")
+PRODUCTION_FACTOR_THRESHOLD = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+sendInit("BillySlithersssssss")
 
 def move(location, x, y, gameMap):
     site = gameMap.getSite(location)
@@ -14,23 +15,22 @@ def move(location, x, y, gameMap):
 
     if weakestBeatableForeignDirection != 0:
         weakestBFSite = gameMap.getSite(location, weakestBeatableForeignDirection)
-        if weakestBFSite.strength < site.strength and site.strength >= site.production * PRODUCTION_FACTOR:
+        if weakestBFSite.strength < site.strength and productionCheck(site.strength, site.production):
             return Move(location, weakestBeatableForeignDirection)
 
     #this bit is shit
     if allFriendly(location):
         #return Move(location, randomNW())
-        if site.strength > site.production * PRODUCTION_FACTOR:
+        if productionCheck(site.strength, site.production):
             return Move(location, directionOfNearestUnfriendlySquare(x,y,gameMap))
 
 
     return Move(location,STILL)
 
-def randomNW():
-    if random.random() < 0.5 :
-        return NORTH
-    else:
-        return WEST
+
+def productionCheck(strength, production):
+    return strength >= production * PRODUCTION_FACTOR_THRESHOLD[production]
+
 
 #I can use my starting square to help with this right?
 #just keep going in the same direction
@@ -49,6 +49,7 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                     localX = 0;
                     break
                 if localX > GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR:
+                    localX = 0;
                     break;
         if d == WEST:
             while localX <= gameMap.width:
@@ -60,6 +61,7 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                     localX = 0
                     break
                 if localX > GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR:
+                    localX = 0;
                     break;
         if d == NORTH:
             while localY <= gameMap.height:
@@ -71,6 +73,7 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                     localY = 0
                     break
                 if localY > GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR:
+                    localY = 0;
                     break;
         if d == SOUTH:
             while localY <= gameMap.height:
@@ -82,6 +85,7 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
                     localY=0
                     break
                 if localY > GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR:
+                    localY = 0;
                     break;
 
     if directionCounts[0] == directionCounts[1] and directionCounts[1] == directionCounts[2] and directionCounts[2] == directionCounts[3]:
@@ -89,6 +93,8 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
 
     return directionCounts.index(min(directionCounts)) + 1
 
+#somehow this logic is wrong because I've seen things moving the wrong direction
+#things go south a lot still
 def OkayJustGoBasedOnTheStartPosition(x,y):
     startX = START_POS[0]
     startY = START_POS[1]
