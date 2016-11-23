@@ -5,9 +5,11 @@ myID, gameMap = getInit()
 START_POS = [0,0]
 INIT = False
 PRODUCTION_FACTOR = 3
-GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR = 3
-PRODUCTION_FACTOR_THRESHOLD = [0,1,1,2,3,5,8,8,8,8,8,10,10,10,10,10,10,10,10,10,10]
+GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR = 2
+PRODUCTION_FACTOR_THRESHOLD = [0,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4]
 #PRODUCTION_FACTOR_THRESHOLD= [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
+GAME_H = 0
+GAME_W = 0
 sendInit("BillySlithersssssss")
 
 def move(location, x, y, gameMap):
@@ -30,7 +32,7 @@ def move(location, x, y, gameMap):
 
 
 def productionCheck(strength, production):
-    return strength >= production * PRODUCTION_FACTOR_THRESHOLD[production]
+    return strength >= PRODUCTION_FACTOR * PRODUCTION_FACTOR_THRESHOLD[production]
 
 
 #I can use my starting square to help with this right?
@@ -97,20 +99,34 @@ def directionOfNearestUnfriendlySquare(x, y, gameMap):
 #somehow this logic is wrong because I've seen things moving the wrong direction
 #things go south a lot still
 def OkayJustGoBasedOnTheStartPosition(x,y):
+    global GAME_H, GAME_W
+
     startX = START_POS[0]
     startY = START_POS[1]
     diffX = abs(startX - x)
     diffY = abs(startY - y)
     if diffX > diffY:
         if x > startX:
-            return EAST
+            if x !=0:
+                return EAST
+            else:
+                return NORTH
         else:
-            return WEST
+            if x != GAME_W-1:
+                return WEST
+            else:
+                return NORTH
     else:
         if y > startY:
-            return SOUTH
+            if y != GAME_H-1:
+                return SOUTH
+            else:
+                return EAST
         else:
-            return NORTH
+            if y !=0:
+                return NORTH
+            else:
+                return EAST
 
 
 def allFriendly(location):
@@ -136,6 +152,8 @@ def weakestBeatableForeignNeighbour(location):
 while True:
     moves = []
     gameMap = getFrame()
+    GAME_H = gameMap.height
+    GAME_W = gameMap.width
     for y in range(gameMap.height):
         for x in range(gameMap.width):
             location = Location(x, y)
