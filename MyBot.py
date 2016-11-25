@@ -1,166 +1,151 @@
 from hlt import *
 from networking import *
 
+def getValueMap(valueMap, gameMap):
+    for y in range(gameMap.height):
+        for x in range(gameMap.width):
+            valueMap[y][x] = gameMap.getSite(Location(x,y)).production
+    return valueMap
+
+
 myID, gameMap = getInit()
-START_POS = [0,0]
-INIT = False
-PRODUCTION_FACTOR = 3
-GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR = 2
-PRODUCTION_FACTOR_THRESHOLD = [0,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4]
-#PRODUCTION_FACTOR_THRESHOLD= [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]
-GAME_H = 0
-GAME_W = 0
-MAP_SIZE = 0
-MY_TERRITORY = 0
-sendInit("BillySlithersssssss")
+valueMap = [ [0 for x in range(gameMap.width)] for y in range(gameMap.height)]
+valueMap = getValueMap(valueMap, gameMap)
+sendInit("NadjaBot")
 
-def move(location, x, y, gameMap):
-    global MY_TERRITORY
-    site = gameMap.getSite(location)
-    weakestBeatableForeignDirection = weakestBeatableForeignNeighbour(location)
-
-    if weakestBeatableForeignDirection != 0:
-        weakestBFSite = gameMap.getSite(location, weakestBeatableForeignDirection)
-        if weakestBFSite.strength < site.strength and productionCheck(site.strength, site.production):
-            MY_TERRITORY+=1
-            return Move(location, weakestBeatableForeignDirection)
-
-    #this bit is shit
-    if allFriendly(location):
-        #return Move(location, randomNW())
-        if productionCheck(site.strength, site.production):
-            return Move(location, directionOfNearestUnfriendlySquare(x,y,gameMap))
+def move(location, gameMap, x, y):
+    this_square = gameMap.getSite(location)
+    #gameMap.getSite(location
+    #
+    #return Move(location,STILL)
+    return Move(location, worthMovingCheck(sexiestNeighbour(location, gameMap, this_square.owner, this_square.strength, x, y, gameMap.width, gameMap.height), this_square.strength, this_square.production))
 
 
-    return Move(location,STILL)
-
-
-def productionCheck(strength, production):
-    return strength >= PRODUCTION_FACTOR * PRODUCTION_FACTOR_THRESHOLD[production]
-
-
-#I'M TIMING OUT AGAINST BRONZE FFS
-def directionOfNearestUnfriendlySquare(x, y, gameMap):
-    global MAP_SIZE, MY_TERRITORY
-    if MY_TERRITORY / MAP_SIZE >= 0.65:
-        return OkayJustGoBasedOnTheStartPosition(x,y)
-
-    directionCounts = [0,0,0,0]
-    localX = 0
-    localY = 0
+#our sexiest neighbour will be the highest production one we can beat
+def sexiestNeighbour(location, gameMap, ownerID, myStrength, x, y,w,h):
+    global valueMap
+    dirs = [256,256,256,256]
+    dirsIOwn = []
+    #Find neighbours we can beat
     for d in CARDINALS:
-        if d == EAST:
-            while localX <= gameMap.width:
-                neighbour_site = gameMap.getSite(Location((x+localX) % gameMap.width, y),d)
-                if neighbour_site.owner == myID:
-                    directionCounts[d-1]+=1
-                    localX+=1
-                else:
-                    localX = 0;
-                    break
-                if localX > GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR:
-                    localX = 0;
-                    break;
-        if d == WEST:
-            while localX <= gameMap.width:
-                neighbour_site = gameMap.getSite(Location((x-localX) % gameMap.width, y),d)
-                if neighbour_site.owner == myID:
-                    directionCounts[d-1]+=1
-                    localX+=1
-                else:
-                    localX = 0
-                    break
-                if localX > GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR:
-                    localX = 0;
-                    break;
-        if d == NORTH:
-            while localY <= gameMap.height:
-                neighbour_site = gameMap.getSite(Location(x, (y - localY) % gameMap.height),d)
-                if neighbour_site.owner == myID:
-                    directionCounts[d-1]+=1
-                    localY+=1
-                else:
-                    localY = 0
-                    break
-                if localY > GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR:
-                    localY = 0;
-                    break;
-        if d == SOUTH:
-            while localY <= gameMap.height:
-                neighbour_site = gameMap.getSite(Location(x, (y+localY) % gameMap.height),d)
-                if neighbour_site.owner == myID:
-                    directionCounts[d-1]+=1
-                    localY+=1
-                else:
-                    localY=0
-                    break
-                if localY > GIVE_UP_ON_THAT_LONG_FUNCTION_FACTOR:
-                    localY = 0;
-                    break;
+        neighbour_site = gameMap.getSite(location, d)
+        if ownerID == neighbour_site.owner:
+            dirsIOwn.append((d,neighbour_site.strength))
+        if (strongerThanYou(myStrength, neighbour_site.strength) and ownerID != neighbour_site.owner):
+            dirs[d-1] = neighbour_site.strength
 
-    if directionCounts[0] == directionCounts[1] and directionCounts[1] == directionCounts[2] and directionCounts[2] == directionCounts[3]:
-        return OkayJustGoBasedOnTheStartPosition(x,y)
+    if min(dirs) == 256:
+        if len(dirsIOwn) == 4:
+            #all the squares in the map are friends!
+            friendlyChoices = []
+            for i in dirsIOwn:
+                friendlyChoices.append(i[0]) #we could go here
+            viablePals = []
+            for d in friendlyChoices:
+                #it's the actual direction by now :lenny-face:
+                palStrength = gameMap.getSite(location, d).strength
+                if myStrength + palStrength <= 255:
+                    viablePals.append(d)
+            if len(viablePals)== 0:
+                return travelOnMyWaywordSon(location, gameMap, ownerID, myStrength, x, y, w, h)
+            return getMostValuable(viablePals,x,y,w,h)
+        else:
+            return STILL
 
-    return directionCounts.index(min(directionCounts)) + 1
+    beatableDirections = []
+    index = 0
+    for d in dirs:
+        if d != 256:
+            beatableDirections.append(index+1)
+        index+=1
 
+    if len(beatableDirections) == 1:
+        return beatableDirections[0]
 
-#They run along the edges when they get there. They need to just keep going as if it wraps
-def OkayJustGoBasedOnTheStartPosition(x,y):
-    global GAME_H, GAME_W
+    #There's a more complex trade-off to consider here.....
+    return getMostValuable(beatableDirections, x, y,w,h)
 
-    if x == GAME_W or x == 0 or y == GAME_H or y ==0:
-        return random.choice(DIRECTIONS)
+#this function tries to determine which way a block surrounded by friendlies should move
+def travelOnMyWaywordSon(location, gameMap, ownerID, myStrength, x, y, w, h):
+    for y1 in range(gameMap.height):
+        for x1 in range(gameMap.width):
+            location1 = Location(x1, y1)
+            site1 = gameMap.getSite(location1)
+            if site1.owner != ownerID:
+                return directionTowardsCoords(x1,y1,x,y,w,h)
+    return STILL
 
-    startX = START_POS[0]
-    startY = START_POS[1]
-    diffX = abs(startX - x)
-    diffY = abs(startY - y)
-    if diffX > diffY:
-        if x > startX:
+def directionTowardsCoords(targetX,targetY,x,y,w,h):
+    diffX = abs(targetX - x)
+    diffY = abs(targetY - y)
+    halfwayW = w/2
+    halfwayH = h/2
+    if x > halfwayW:
+        if targetX > halfwayW:
             return EAST
         else:
             return WEST
     else:
-        if y > startY:
+        if targetX < halfwayW:
+            return WEST
+        else:
+            return EAST
+
+    if y > halfwayH:
+        if targetY > halfwayH:
             return SOUTH
         else:
             return NORTH
+    else:
+        if targetY < halfwayH:
+            return NORTH
+        else:
+            return SOUTH
+
+    return STILL
 
 
-def allFriendly(location):
-    allFriend = True;
-    for d in CARDINALS:
-        neighbour_site = gameMap.getSite(location,d)
-        if neighbour_site.owner != myID:
-            allFriend = False;
-    return allFriend
+def getMostValuable(directionList, x, y,w,h):
+    global valueMap
+    mostValuable = 0
+    chosenValuableDirection = STILL
+    for d in directionList:
+        if d == EAST:
+            val = valueMap[y][(x+1)%w]
+            if val > mostValuable:
+                mostValuable = val
+                chosenValuableDirection = d
+        if d == WEST:
+            val = valueMap[y][x-1%w]
+            if val > mostValuable:
+                mostValuable = val
+                chosenValuableDirection = d
+        if d == NORTH:
+            val = valueMap[(y-1)%h][x]
+            if val > mostValuable:
+                mostValuable = val
+                chosenValuableDirection = d
+        if d == SOUTH:
+            val = valueMap[(y+1)%h][x]
+            if val > mostValuable:
+                mostValuable = val
+                chosenValuableDirection = d
+    return chosenValuableDirection
 
-def weakestBeatableForeignNeighbour(location):
-    strength = 255
-    direction = 0
-    for d in CARDINALS:
-        neighbour_site = gameMap.getSite(location,d)
-        if neighbour_site.strength <= strength and myID != neighbour_site.owner:
-            strength = neighbour_site.strength
-            direction = d;
-    return direction;
+def worthMovingCheck(direction, siteStrength, siteProduction):
+    if siteStrength >= siteProduction * 3:
+        return direction
+    else:
+        return STILL
 
+def strongerThanYou(a,b):
+    return a > b
 
-#should I look for a first enemy to attack?
 while True:
     moves = []
     gameMap = getFrame()
-    if (not INIT):
-        GAME_H = gameMap.height
-        GAME_W = gameMap.width
-        MAP_SIZE = GAME_H * GAME_W
-        MY_TERRITORY = 0
     for y in range(gameMap.height):
         for x in range(gameMap.width):
             location = Location(x, y)
-            if gameMap.getSite(location).owner == myID:
-                if (not INIT):
-                    INIT = True
-                    START_POS = [x,y]
-                moves.append(move(location,x,y,gameMap))
+            moves.append(move(location, gameMap, x, y))
     sendFrame(moves)
